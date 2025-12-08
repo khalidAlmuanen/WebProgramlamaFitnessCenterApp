@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FitnessCenterApp.Models
+namespace WebProgramlamaFitnessCenterApp.Models
 {
     public class Service
     {
@@ -25,5 +25,7 @@ namespace FitnessCenterApp.Models
         public int GymId { get; set; }
 
         public Gym? Gym { get; set; }
+        public ICollection<Trainer>? Trainers { get; set; }
+        public ICollection<Appointment>? Appointments { get; set; }
     }
 }

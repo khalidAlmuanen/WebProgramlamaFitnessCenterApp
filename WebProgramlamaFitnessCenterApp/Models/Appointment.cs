@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace FitnessCenterApp.Models
+namespace WebProgramlamaFitnessCenterApp.Models
 {
     public enum AppointmentStatus
     {
@@ -52,6 +52,9 @@ namespace FitnessCenterApp.Models
         [MaxLength(500)]
         [Display(Name = "Notlar")]
         public string? Notes { get; set; }
+
+        [Display(Name = "Üye")]
+        public ApplicationUser? Member { get; set; }
 
         [Display(Name = "Antrenör")]
         public Trainer? Trainer { get; set; }

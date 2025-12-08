@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FitnessCenterApp.Models
+namespace WebProgramlamaFitnessCenterApp.Models
 {
     public class Gym
     {
@@ -20,5 +20,7 @@ namespace FitnessCenterApp.Models
         [Required]
         public TimeSpan ClosingTime { get; set; }
 
+        public ICollection<Service>? Services { get; set; }
+        public ICollection<Trainer>? Trainers { get; set; }
     }
 }

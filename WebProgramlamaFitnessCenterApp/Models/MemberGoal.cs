@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace FitnessCenterApp.Models
+namespace WebProgramlamaFitnessCenterApp.Models
 {
     public class MemberGoal
     {
@@ -30,5 +30,7 @@ namespace FitnessCenterApp.Models
         [StringLength(500)]
         public string? Notes { get; set; }
 
+        [ForeignKey(nameof(UserId))]
+        public ApplicationUser? User { get; set; }
     }
 }

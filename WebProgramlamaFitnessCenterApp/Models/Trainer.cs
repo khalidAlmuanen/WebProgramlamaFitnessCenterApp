@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace FitnessCenterApp.Models
+namespace WebProgramlamaFitnessCenterApp.Models
 {
     public class Trainer
     {
@@ -34,5 +34,11 @@ namespace FitnessCenterApp.Models
 
         [Display(Name = "Hizmet")]
         public Service? Service { get; set; }
+
+        [Display(Name = "Müsaitlikler")]
+        public ICollection<TrainerAvailability>? Availabilities { get; set; } = new List<TrainerAvailability>();
+
+        [Display(Name = "Randevular")]
+        public ICollection<Appointment>? Appointments { get; set; } = new List<Appointment>();
     }
 }
