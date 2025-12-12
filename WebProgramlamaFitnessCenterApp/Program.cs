@@ -1,5 +1,9 @@
-using WebProgramlamaFitnessCenterApp.Data;
 using Microsoft.EntityFrameworkCore;
+using WebProgramlamaFitnessCenterApp.Data;
+using WebProgramlamaFitnessCenterApp.Models;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
+using WebProgramlamaFitnessCenterApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<IAIRecommendationService, AIRecommendationService>();
 
 var app = builder.Build();
 
