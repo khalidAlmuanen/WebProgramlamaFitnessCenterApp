@@ -8,7 +8,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebProgramlamaFitnessCenterApp</title>
+    <title>@ViewData["Title"] - FitnessCenterApp</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/FitnessCenterApp.styles.css" asp-append-version="true" />
@@ -18,7 +18,7 @@
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    WebProgramlamaFitnessCenterApp
+                    FitnessCenterApp
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,12 +54,22 @@
                                             Spor Salonları
                                         </a>
                                     </li>
-                                     <li>
+                                    <li>
                                         <a class="dropdown-item" asp-area="" asp-controller="Service" asp-action="Index">
                                             Hizmetler
                                         </a>
                                     </li>
-                                     <li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="" asp-controller="Trainers" asp-action="Index">
+                                            Eğitmenler
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="" asp-controller="TrainerAvailability" asp-action="Index">
+                                            Antrenör Müsaitlikleri
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="Index">
                                             Randevular
                                         </a>
@@ -68,6 +78,21 @@
                             </li>
                         }
 
+                        @if (SignInManager.IsSignedIn(User) && !User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Recommendation" asp-action="Index">
+                                    Önerilen Egzersizlerim
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="BodyTransform" asp-action="Create">
+                                    Vücut Dönüşüm Tahmini
+                                </a>
+                            </li>
+                        }
+                    </ul>
 
                     <partial name="_LoginPartial" />
                 </div>
@@ -83,7 +108,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; @DateTime.Now.Year - WebProgramlamaFitnessCenterApp -
+            &copy; @DateTime.Now.Year - FitnessCenterApp -
             <a asp-area="" asp-controller="Home" asp-action="Privacy">Gizlilik</a>
         </div>
     </footer>
