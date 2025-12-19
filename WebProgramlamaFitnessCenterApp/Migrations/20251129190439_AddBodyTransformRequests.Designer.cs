@@ -4,6 +4,7 @@ using WebProgramlamaFitnessCenterApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebProgramlamaFitnessCenterApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251129190439_AddBodyTransformRequests")]
+    partial class AddBodyTransformRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,34 +152,26 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DurationMonths")
+                    b.Property<int?>("DurationMonths")
                         .HasColumnType("int");
 
-                    b.Property<double?>("ExpectedChangePercent")
-                        .HasColumnType("float");
-
                     b.Property<string>("GeneratedImagePath")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("GoalType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("MemberId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OriginalImagePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<double?>("StartWeightKg")
-                        .HasColumnType("float");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("MemberId");
 
                     b.ToTable("BodyTransformRequests");
                 });
@@ -524,17 +519,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("Trainer");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.BodyTransformRequest", b =>
-                {
-                    b.HasOne("FitnessCenterApp.Models.ApplicationUser", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.MemberGoal", b =>

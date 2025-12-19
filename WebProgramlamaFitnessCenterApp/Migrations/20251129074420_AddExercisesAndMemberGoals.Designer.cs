@@ -4,6 +4,7 @@ using WebProgramlamaFitnessCenterApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebProgramlamaFitnessCenterApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251129074420_AddExercisesAndMemberGoals")]
+    partial class AddExercisesAndMemberGoals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,7 +141,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.ToTable("Appointments");
                 });
 
-            modelBuilder.Entity("FitnessCenterApp.Models.BodyTransformRequest", b =>
+            modelBuilder.Entity("FitnessCenterApp.Models.Exercise", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,39 +149,29 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("DurationMonths")
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
-                    b.Property<double?>("ExpectedChangePercent")
-                        .HasColumnType("float");
+                    b.Property<string>("Level")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("GeneratedImagePath")
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("GoalType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MemberId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("OriginalImagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("StartWeightKg")
-                        .HasColumnType("float");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
-
-                    b.ToTable("BodyTransformRequests");
+                    b.ToTable("Exercises");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.Gym", b =>
@@ -524,17 +517,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("Trainer");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.BodyTransformRequest", b =>
-                {
-                    b.HasOne("FitnessCenterApp.Models.ApplicationUser", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.MemberGoal", b =>

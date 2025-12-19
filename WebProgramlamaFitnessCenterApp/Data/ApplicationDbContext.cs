@@ -17,6 +17,7 @@ namespace WebProgramlamaFitnessCenterApp.Data
         public DbSet<TrainerAvailability> TrainerAvailabilities { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<MemberGoal> MemberGoals { get; set; }
+        public DbSet<BodyTransformRequest> BodyTransformRequests { get; set; }
 
 
 

@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace WebProgramlamaFitnessCenterApp.Migrations
 {
-    /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreateV2 : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -115,8 +113,8 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -160,8 +158,8 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -169,30 +167,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
                     table.ForeignKey(
                         name: "FK_AspNetUserTokens_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MemberGoals",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    HeightCm = table.Column<int>(type: "int", nullable: true),
-                    WeightKg = table.Column<double>(type: "float", nullable: true),
-                    GoalType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    WorkoutsPerWeek = table.Column<int>(type: "int", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MemberGoals", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MemberGoals_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -208,7 +182,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     DurationMinutes = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     GymId = table.Column<int>(type: "int", nullable: false)
                 },
@@ -231,8 +205,8 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Specialization = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ExperienceYears = table.Column<int>(type: "int", nullable: true),
-                    Rating = table.Column<double>(type: "float", nullable: true),
+                    ExperienceYears = table.Column<int>(type: "int", nullable: false),
+                    Rating = table.Column<double>(type: "float", nullable: false),
                     GymId = table.Column<int>(type: "int", nullable: false),
                     ServiceId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -265,7 +239,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -368,37 +342,14 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Gyms_Name",
-                table: "Gyms",
-                column: "Name",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MemberGoals_UserId",
-                table: "MemberGoals",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Services_GymId",
                 table: "Services",
                 column: "GymId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Services_Name_GymId",
-                table: "Services",
-                columns: new[] { "Name", "GymId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TrainerAvailabilities_TrainerId",
                 table: "TrainerAvailabilities",
                 column: "TrainerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Trainers_FullName_GymId",
-                table: "Trainers",
-                columns: new[] { "FullName", "GymId" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trainers_GymId",
@@ -431,9 +382,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
-
-            migrationBuilder.DropTable(
-                name: "MemberGoals");
 
             migrationBuilder.DropTable(
                 name: "TrainerAvailabilities");

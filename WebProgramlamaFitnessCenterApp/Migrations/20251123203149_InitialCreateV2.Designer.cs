@@ -4,6 +4,7 @@ using WebProgramlamaFitnessCenterApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace WebProgramlamaFitnessCenterApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251123203149_InitialCreateV2")]
+    partial class InitialCreateV2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,8 +115,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
@@ -136,49 +138,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.HasIndex("TrainerId");
 
                     b.ToTable("Appointments");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.BodyTransformRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DurationMonths")
-                        .HasColumnType("int");
-
-                    b.Property<double?>("ExpectedChangePercent")
-                        .HasColumnType("float");
-
-                    b.Property<string>("GeneratedImagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("GoalType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MemberId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("OriginalImagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("StartWeightKg")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MemberId");
-
-                    b.ToTable("BodyTransformRequests");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.Gym", b =>
@@ -209,46 +168,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
-
                     b.ToTable("Gyms");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.MemberGoal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("GoalType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("HeightCm")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<double?>("WeightKg")
-                        .HasColumnType("float");
-
-                    b.Property<int?>("WorkoutsPerWeek")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("MemberGoals");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.Service", b =>
@@ -278,15 +198,11 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<decimal>("Price")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GymId");
-
-                    b.HasIndex("Name", "GymId")
-                        .IsUnique();
 
                     b.ToTable("Services");
                 });
@@ -299,7 +215,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ExperienceYears")
+                    b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
 
                     b.Property<string>("FullName")
@@ -310,7 +226,7 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.Property<int>("GymId")
                         .HasColumnType("int");
 
-                    b.Property<double?>("Rating")
+                    b.Property<double>("Rating")
                         .HasColumnType("float");
 
                     b.Property<int?>("ServiceId")
@@ -325,9 +241,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.HasIndex("GymId");
 
                     b.HasIndex("ServiceId");
-
-                    b.HasIndex("FullName", "GymId")
-                        .IsUnique();
 
                     b.ToTable("Trainers");
                 });
@@ -524,28 +437,6 @@ namespace WebProgramlamaFitnessCenterApp.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("Trainer");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.BodyTransformRequest", b =>
-                {
-                    b.HasOne("FitnessCenterApp.Models.ApplicationUser", "Member")
-                        .WithMany()
-                        .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("FitnessCenterApp.Models.MemberGoal", b =>
-                {
-                    b.HasOne("FitnessCenterApp.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FitnessCenterApp.Models.Service", b =>
