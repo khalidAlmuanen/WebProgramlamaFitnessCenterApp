@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace FitnessCenterApp.Services
+namespace WebProgramlamaFitnessCenterApp.Services
 {
     public interface IBodyTransformAIService
     {
