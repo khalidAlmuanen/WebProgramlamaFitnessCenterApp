@@ -1,78 +1,60 @@
 @model WebProgramlamaFitnessCenterApp.Models.BodyTransformRequest
 
 @{
-    ViewData["Title"] = "Vücut Dönüşümü Sonucu";
+    ViewData["Title"] = "Dönüşüm Sonucu";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="container mt-4">
+    <h2>Dönüşüm Sonucu</h2>
+    <hr />
 
-@if (TempData["BodyTransformError"] is string errMsg)
-{
-    <div class="alert alert-warning">
-        @errMsg
-    </div>
-}
+    @if (TempData["Msj"] is string okMsg)
+    {
+        <div class="alert alert-success">@okMsg</div>
+    }
+    @if (TempData["HataMsj"] is string errMsg)
+    {
+        <div class="alert alert-warning">@errMsg</div>
+    }
 
-<p>
-    Hedefiniz:
-    <strong>@Model.GoalType</strong>
-    (@Model.DurationMonths Ay)
-</p>
-
-@if (Model.StartWeightKg.HasValue)
-{
-    <p>
-        Başlangıç kilonuz:
-        <strong>@Model.StartWeightKg.Value.ToString("0.0") kg</strong>
-    </p>
-}
-
-@if (Model.ExpectedChangePercent.HasValue)
-{
-    <p>
-        Tahmini değişim oranı:
-        <strong>@Model.ExpectedChangePercent.Value.ToString("0.0") %</strong>
-    </p>
-}
-
-<hr />
-
-<div class="row">
-    <div class="col-md-6 text-center">
-        <h4>Mevcut Görünüm</h4>
-        <img src="@Model.OriginalImagePath"
-             alt="Orijinal görüntü"
-             class="img-fluid"
-             style="max-height:500px;" />
+    <div class="card mb-3">
+        <div class="card-body">
+            <p class="mb-1"><strong>Hedef:</strong> @Model.GoalType</p>
+            <p class="mb-1"><strong>Süre (Ay):</strong> @Model.DurationMonths</p>
+            <p class="mb-1"><strong>Başlangıç Kilo:</strong> @Model.StartWeightKg</p>
+            <p class="mb-1"><strong>Beklenen Değişim (%):</strong> @Model.ExpectedChangePercent</p>
+            <p class="mb-0"><strong>Tarih:</strong> @Model.CreatedAt</p>
+        </div>
     </div>
 
-    <div class="col-md-6 text-center">
-        <h4>Tahmini Görünüm (Yapay Zekâ)</h4>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <h5>Orijinal Fotoğraf</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.OriginalImagePath))
+            {
+                <img src="@Model.OriginalImagePath" class="img-fluid rounded border" />
+            }
+            else
+            {
+                <div class="alert alert-danger">Orijinal görsel yolu boş.</div>
+            }
+        </div>
 
-        @if (!string.IsNullOrEmpty(Model.GeneratedImagePath))
-        {
-            <img src="@Model.GeneratedImagePath"
-                 alt="Yapay zekâ tahmini"
-                 class="img-fluid"
-                 style="max-height:500px;" />
-        }
-        else
-        {
-            <p class="text-muted mt-3">
-                Yapay zekâ tahmini şu anda oluşturulamadı.
-            </p>
-        }
+        <div class="col-md-6">
+            <h5>Oluşturulan Tahmin</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.GeneratedImagePath))
+            {
+                <img src="@Model.GeneratedImagePath" class="img-fluid rounded border" />
+            }
+            else
+            {
+                <div class="alert alert-warning">AI görseli oluşturulamadı.</div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <a asp-action="Create" asp-controller="BodyTransform" class="btn btn-primary">Yeni İstek</a>
+        <a asp-action="MyRequests" asp-controller="BodyTransform" class="btn btn-outline-secondary">Geçmiş İsteklerim</a>
     </div>
 </div>
-
-<a asp-action="Create"
-   asp-controller="BodyTransform"
-   class="btn btn-primary mt-3">
-    Yeni Dönüşüm Hesapla
-</a>
-
-<a asp-action="MyRequests"
-   asp-controller="BodyTransform"
-   class="btn btn-outline-secondary mt-3 ms-2">
-    Geçmiş İsteklerim
-</a>

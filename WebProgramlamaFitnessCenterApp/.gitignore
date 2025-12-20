@@ -7,3 +7,5 @@ obj/
 *.log
 
 .vscode/
+wwwroot/uploads/
+wwwroot/uploads/**

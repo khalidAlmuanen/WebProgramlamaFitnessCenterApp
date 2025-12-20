@@ -1,12 +1,12 @@
 using System.Linq;
 using System.Threading.Tasks;
-using WebProgramlamaFitnessCenterApp.Data;          
-using WebProgramlamaFitnessCenterApp.Models;         
+using WebProgramlamaFitnessCenterApp.Data;
+using WebProgramlamaFitnessCenterApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace WebProgramlamaFitnessCenterApp.Controllers     
+namespace WebProgramlamaFitnessCenterApp.Controllers
 {
     [Authorize]
     public class GymController : Controller
@@ -20,11 +20,75 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var gyms = await _context.Gyms
-                .OrderBy(g => g.Name)
-                .ToListAsync();
-
+            var gyms = await _context.Gyms.ToListAsync();
             return View(gyms);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create(Gym gym)
+        {
+            if (!ModelState.IsValid)
+                return View(gym);
+
+            _context.Gyms.Add(gym);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Spor salonu başarıyla eklendi.";
+            TempData["Msj"] = "Spor salonu başarıyla eklendi.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var gym = await _context.Gyms.FindAsync(id);
+            if (gym == null) return NotFound();
+
+            return View(gym);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int id, Gym gym)
+        {
+            if (id != gym.Id) return BadRequest();
+
+            if (!ModelState.IsValid)
+                return View(gym);
+
+            _context.Entry(gym).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Spor salonu başarıyla güncellendi.";
+                TempData["Msj"] = "Spor salonu başarıyla güncellendi.";
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.Gyms.AnyAsync(g => g.Id == id))
+                    return NotFound();
+
+                TempData["Error"] = "Güncelleme sırasında bir hata oluştu.";
+                TempData["HataMsj"] = "Güncelleme sırasında bir hata oluştu.";
+
+                return View(gym);
+            }
         }
 
         public async Task<IActionResult> Details(int? id)
@@ -42,152 +106,26 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Gym gym)
-        {
-            // Aynı isimde gym var mı? (DB index zaten var, ama user-friendly olsun)
-            bool exists = await _context.Gyms.AnyAsync(g => g.Name == gym.Name);
-            if (exists)
-            {
-                ModelState.AddModelError(string.Empty, "Bu isimde bir spor salonu zaten kayıtlı.");
-            }
-
-            if (!ModelState.IsValid)
-                return View(gym);
-
-            _context.Gyms.Add(gym);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Spor salonu başarıyla eklendi.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
 
             var gym = await _context.Gyms.FindAsync(id);
             if (gym == null) return NotFound();
-
-            return View(gym);
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Gym gym)
-        {
-            if (id != gym.Id) return NotFound();
-
-            bool exists = await _context.Gyms.AnyAsync(g => g.Id != gym.Id && g.Name == gym.Name);
-            if (exists)
-            {
-                ModelState.AddModelError(string.Empty, "Bu isimde başka bir spor salonu zaten kayıtlı.");
-            }
-
-            if (!ModelState.IsValid)
-                return View(gym);
-
-            try
-            {
-                _context.Update(gym);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Spor salonu başarıyla güncellendi.";
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await _context.Gyms.AnyAsync(g => g.Id == gym.Id))
-                    return NotFound();
-
-                throw;
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var gym = await _context.Gyms
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            if (gym == null) return NotFound();
-
-            // Bilgilendirme: bağlı kayıt var mı?
-            ViewBag.HasServices = await _context.Services.AnyAsync(s => s.GymId == gym.Id);
-            ViewBag.HasTrainers = await _context.Trainers.AnyAsync(t => t.GymId == gym.Id);
-
-            // Eğer Appointments Gym'e direkt bağlı değilse, Trainer/Service üzerinden kontrol:
-            var serviceIds = await _context.Services
-                .Where(s => s.GymId == gym.Id)
-                .Select(s => s.Id)
-                .ToListAsync();
-
-            var trainerIds = await _context.Trainers
-                .Where(t => t.GymId == gym.Id)
-                .Select(t => t.Id)
-                .ToListAsync();
-
-            bool hasAppointments = await _context.Appointments.AnyAsync(a =>
-                serviceIds.Contains(a.ServiceId) || trainerIds.Contains(a.TrainerId));
-
-            ViewBag.HasAppointments = hasAppointments;
 
             return View(gym);
         }
 
         [HttpPost, ActionName("Delete")]
-        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var gym = await _context.Gyms.FindAsync(id);
             if (gym == null)
             {
-                TempData["Error"] = "Silinecek spor salonu bulunamadı.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            bool hasServices = await _context.Services.AnyAsync(s => s.GymId == id);
-            if (hasServices)
-            {
-                TempData["Error"] = "Bu spor salonuna bağlı hizmetler olduğu için silinemez.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            bool hasTrainers = await _context.Trainers.AnyAsync(t => t.GymId == id);
-            if (hasTrainers)
-            {
-                TempData["Error"] = "Bu spor salonuna bağlı antrenörler olduğu için silinemez.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var serviceIds = await _context.Services
-                .Where(s => s.GymId == id)
-                .Select(s => s.Id)
-                .ToListAsync();
-
-            var trainerIds = await _context.Trainers
-                .Where(t => t.GymId == id)
-                .Select(t => t.Id)
-                .ToListAsync();
-
-            bool hasAppointments = await _context.Appointments.AnyAsync(a =>
-                serviceIds.Contains(a.ServiceId) || trainerIds.Contains(a.TrainerId));
-
-            if (hasAppointments)
-            {
-                TempData["Error"] = "Bu spor salonuna bağlı randevular olduğu için silinemez.";
+                TempData["Error"] = "Spor salonu bulunamadı.";
+                TempData["HataMsj"] = "Spor salonu bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -197,10 +135,12 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             {
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Spor salonu başarıyla silindi.";
+                TempData["Msj"] = "Spor salonu başarıyla silindi.";
             }
             catch (DbUpdateException)
             {
                 TempData["Error"] = "Silme işlemi sırasında veritabanı hatası oluştu.";
+                TempData["HataMsj"] = "Silme işlemi sırasında veritabanı hatası oluştu.";
             }
 
             return RedirectToAction(nameof(Index));
