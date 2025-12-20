@@ -1,137 +1,126 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 using WebProgramlamaFitnessCenterApp.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace WebProgramlamaFitnessCenterApp.Services
 {
     public class AIRecommendationService : IAIRecommendationService
     {
-        private readonly IConfiguration _configuration;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<AIRecommendationService> _logger;
+        private readonly IConfiguration _config;
+        private readonly HttpClient _http;
 
-        public AIRecommendationService(
-            IConfiguration configuration,
-            IHttpClientFactory httpClientFactory,
-            ILogger<AIRecommendationService> logger)
+        public AIRecommendationService(IConfiguration config, IHttpClientFactory httpFactory)
         {
-            _configuration = configuration;
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
+            _config = config;
+            _http = httpFactory.CreateClient();
         }
 
         public async Task<string> GetExercisePlanAsync(MemberGoal profile, List<Service> services)
         {
-            if (profile == null)
-                return "Öneri için önce profilinizi doldurunuz.";
+            var apiKey = _config["OpenAI:ApiKey"];
+            var model = _config["OpenAI:TextModel"] ?? "gpt-4.1-mini";
 
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            var model = _configuration["OpenAI:Model"] ?? "gpt-4.1-mini";
+            // حماية: لو بالغلط موديل صور
+            if (model.StartsWith("gpt-image-", StringComparison.OrdinalIgnoreCase))
+                model = "gpt-4.1-mini";
 
             if (string.IsNullOrWhiteSpace(apiKey))
-                return "OpenAI ApiKey ayarlı değil. (User-Secrets / appsettings kontrol edin)";
+                return "AI önerisi üretilemedi: OpenAI ApiKey ayarlı değil.";
 
-            var servicesText = (services == null || services.Count == 0)
-                ? "Sistemde kayıtlı hizmet yok."
-                : string.Join("\n", services.Select(s =>
-                    $"- {s.Name} | Kategori: {s.Category} | Süre: {s.DurationMinutes} dk | Fiyat: {s.Price}"));
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", apiKey);
 
-            var prompt = $"""
-Sen bir fitness koçu gibisin. Kullanıcı profiline ve mevcut salon hizmetlerine göre kısa, net ve uygulanabilir bir plan üret.
-Cevap Türkçe olsun. Maddeler halinde yaz.
+            var grouped = services
+                .GroupBy(s => s.Category ?? "Genel")
+                .Select(g => $"{g.Key}: " + string.Join(", ", g.Select(x => $"{x.Name} ({x.DurationMinutes} dk)")));
 
-Kullanıcı Profili:
-- Hedef: {profile.GoalType}
-- Kilo (kg): {profile.WeightKg}
-- Boy (cm): {profile.HeightCm}
-- Haftalık antrenman: {profile.WorkoutsPerWeek}
-- Notlar: {profile.Notes}
+            string servicesText = string.Join(" | ", grouped);
 
-Mevcut Hizmetler:
+            var workouts = profile?.WorkoutsPerWeek ?? 3;
+
+            string profileText =
+                $"Boy: {profile?.HeightCm ?? 0} cm, " +
+                $"Kilo: {profile?.WeightKg ?? 0} kg, " +
+                $"Hedef: {profile?.GoalType ?? "Belirsiz"}, " +
+                $"Haftalık antrenman: {workouts}";
+
+            string userPrompt = $@"
+Kullanıcının bilgileri:
+{profileText}
+
+Sistemdeki mevcut hizmetler:
 {servicesText}
 
-İstenen çıktı formatı:
-1) Haftalık Plan (gün gün)
-2) Kardiyo / Kuvvet dağılımı
-3) 3 adet güvenli beslenme önerisi
-4) Dikkat edilmesi gerekenler (kısa)
-""";
+Görev:
+- Kullanıcıya 1 haftalık bir egzersiz planı hazırla.
+- Planı Türkçe yaz.
+- Günlere göre (Pazartesi, Salı, ...) ayır.
+- Her gün için 2-3 egzersiz öner, süre veya set sayısı ile birlikte yaz.
+- Mümkün olduğunda yukarıdaki hizmet isimlerini kullan (Cardio, Yoga, Pilates, Personal Training vb).
+- Kullanıcı yeni başlayan ise çok ağır program verme.
+";
 
-            try
+            var requestBody = new
             {
-                var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromMinutes(2);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                model = model,
+                instructions = "Sen deneyimli bir fitness koçusun. Yanıtını Türkçe ver. Çıktıyı okunabilir maddeler halinde yaz.",
+                input = userPrompt,
+                temperature = 0.7
+            };
 
-                var url = "https://api.openai.com/v1/responses";
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var payload = new
-                {
-                    model = model,
-                    input = prompt,
-                    max_output_tokens = 600
-                };
+            var response = await _http.PostAsync("https://api.openai.com/v1/responses", content);
+            var responseJson = await response.Content.ReadAsStringAsync();
 
-                var json = JsonSerializer.Serialize(payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync(url, content);
-                var responseText = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("OpenAI response not success: {Status} {Body}", response.StatusCode, responseText);
-                    return "AI önerisi üretilemedi. (OpenAI isteği başarısız)";
-                }
-
-                using var doc = JsonDocument.Parse(responseText);
-
-                if (doc.RootElement.TryGetProperty("output_text", out var outputTextEl))
-                {
-                    var outputText = outputTextEl.GetString();
-                    return string.IsNullOrWhiteSpace(outputText) ? "AI boş çıktı döndürdü." : outputText;
-                }
-
-                var extracted = ExtractTextFallback(doc.RootElement);
-                return string.IsNullOrWhiteSpace(extracted) ? "AI boş çıktı döndürdü." : extracted;
+            if (!response.IsSuccessStatusCode)
+            {
+                return "AI önerisi üretilemedi. (OpenAI isteği başarısız)\n" +
+                       $"Durum: {(int)response.StatusCode} {response.StatusCode}\n" +
+                       $"Detay: {responseJson}";
             }
-            catch (Exception ex)
+
+            using var doc = JsonDocument.Parse(responseJson);
+
+            if (doc.RootElement.TryGetProperty("output_text", out var outputTextEl) &&
+                outputTextEl.ValueKind == JsonValueKind.String)
             {
-                _logger.LogError(ex, "AIRecommendationService hata");
-                return "AI önerisi üretilemedi (hata oluştu).";
+                var outputText = outputTextEl.GetString();
+                return string.IsNullOrWhiteSpace(outputText) ? "Plan oluşturulamadı." : outputText;
             }
-        }
 
-        private static string ExtractTextFallback(JsonElement root)
-        {
-            try
+            // fallback parsing
+            var sb = new StringBuilder();
+            if (doc.RootElement.TryGetProperty("output", out var outputEl) && outputEl.ValueKind == JsonValueKind.Array)
             {
-                if (!root.TryGetProperty("output", out var outputArr) || outputArr.ValueKind != JsonValueKind.Array)
-                    return "";
-
-                var sb = new StringBuilder();
-                foreach (var item in outputArr.EnumerateArray())
+                foreach (var item in outputEl.EnumerateArray())
                 {
-                    if (!item.TryGetProperty("content", out var contentArr) || contentArr.ValueKind != JsonValueKind.Array)
+                    if (!item.TryGetProperty("content", out var contentEl) || contentEl.ValueKind != JsonValueKind.Array)
                         continue;
 
-                    foreach (var c in contentArr.EnumerateArray())
+                    foreach (var c in contentEl.EnumerateArray())
                     {
-                        if (c.TryGetProperty("text", out var textEl))
+                        if (c.TryGetProperty("type", out var typeEl) &&
+                            typeEl.ValueKind == JsonValueKind.String &&
+                            typeEl.GetString() == "output_text" &&
+                            c.TryGetProperty("text", out var textEl))
                         {
                             sb.AppendLine(textEl.GetString());
                         }
                     }
                 }
-                return sb.ToString().Trim();
             }
-            catch
-            {
-                return "";
-            }
+
+            var fallback = sb.ToString().Trim();
+            return string.IsNullOrWhiteSpace(fallback) ? "Plan oluşturulamadı." : fallback;
         }
     }
 }

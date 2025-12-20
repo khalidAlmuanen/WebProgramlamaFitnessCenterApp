@@ -38,6 +38,7 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             _logger = logger;
         }
 
+        // GET: /BodyTransform/Create
         [HttpGet]
         public IActionResult Create()
         {
@@ -48,6 +49,7 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             return View(vm);
         }
 
+        // POST: /BodyTransform/Create  (NORMAL SUBMIT)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BodyTransformCreateViewModel model)
@@ -55,6 +57,7 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            // Extra validations (in case client validation doesn't run)
             if (string.IsNullOrWhiteSpace(model.GoalType))
             {
                 ModelState.AddModelError(nameof(model.GoalType), "Lütfen bir hedef seçiniz.");
@@ -77,7 +80,7 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             if (user == null)
                 return Challenge();
 
-            // Save original image
+            // 1) Save original image
             var originalFolder = Path.Combine(_env.WebRootPath, "uploads", "original");
             Directory.CreateDirectory(originalFolder);
 
@@ -91,39 +94,39 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
 
             var originalRelativePath = "/uploads/original/" + originalFileName;
 
-            // Generate with AI
+            // 2) Call AI service
             string generatedRelativePath = "";
-            double expectedPercent = 0;
+            double expectedChangePercent = 0;
 
             try
             {
-                var result = await _bodyAi.GenerateTransformedImageAsync(
+                var aiResult = await _bodyAi.GenerateTransformedImageAsync(
                     originalImagePath: originalPhysicalPath,
                     goalType: model.GoalType,
                     durationMonths: model.DurationMonths,
                     startWeightKg: model.StartWeightKg.Value
                 );
 
-                generatedRelativePath = result.generatedImagePath ?? "";
-                expectedPercent = result.expectedChangePercent;
+                generatedRelativePath = aiResult.generatedImagePath ?? "";
+                expectedChangePercent = aiResult.expectedChangePercent;
 
                 if (string.IsNullOrWhiteSpace(generatedRelativePath))
-                    TempData["HataMsj"] = "Dönüşüm görseli oluşturulamadı (ApiKey/Billing/Limit).";
+                    TempData["HataMsj"] = "Dönüşüm görseli oluşturulamadı. (ApiKey/Billing/Limit kontrol edin)";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "BodyTransform AI error");
-                TempData["HataMsj"] = "Yapay zekâ hata verdi. ApiKey/Billing kontrol edin.";
+                TempData["HataMsj"] = "Yapay zekâ görsel üretimi hata verdi. ApiKey/Billing kontrol edin.";
             }
 
-            //  Save DB
+            // 3) Save DB
             var request = new BodyTransformRequest
             {
                 MemberId = user.Id,
                 GoalType = model.GoalType,
                 DurationMonths = model.DurationMonths,
                 StartWeightKg = model.StartWeightKg,
-                ExpectedChangePercent = expectedPercent,
+                ExpectedChangePercent = expectedChangePercent,
                 OriginalImagePath = originalRelativePath,
                 GeneratedImagePath = generatedRelativePath,
                 CreatedAt = DateTime.UtcNow
@@ -135,18 +138,11 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             if (!string.IsNullOrWhiteSpace(request.GeneratedImagePath))
                 TempData["Msj"] = "Dönüşüm görseli başarıyla oluşturuldu.";
 
-            var redirectUrl = Url.Action(nameof(Result), "BodyTransform", new { id = request.Id }) ?? $"/BodyTransform/Result/{request.Id}";
-
-            var isAjax =
-                Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
-                (Request.Headers.TryGetValue("Accept", out var accept) && accept.ToString().Contains("application/json"));
-
-            if (isAjax)
-                return Ok(new { redirectUrl });
-
-            return Redirect(redirectUrl);
+            // ✅ NORMAL redirect (like lecture style)
+            return RedirectToAction(nameof(Result), new { id = request.Id });
         }
 
+        // GET: /BodyTransform/Result/5
         [HttpGet]
         public async Task<IActionResult> Result(int id)
         {
@@ -160,6 +156,7 @@ namespace WebProgramlamaFitnessCenterApp.Controllers
             return View(req);
         }
 
+        // GET: /BodyTransform/MyRequests
         [HttpGet]
         public async Task<IActionResult> MyRequests()
         {
